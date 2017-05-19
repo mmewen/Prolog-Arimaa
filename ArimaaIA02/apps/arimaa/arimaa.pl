@@ -72,9 +72,24 @@ fblr_positions(Positions, Position, _) :-  front_position(Front, Position), left
 is_friend([Row, Col], Board) :- who_is_there([_, _, _, silver], [Row, Col], Board).
 friend_in([Pos | Positions], Board) :- is_friend(Pos, Board); friend_in(Positions, Board).
 
-% Tell if there is an opponent
-is_opponent([Row, Col], Board) :- who_is_there([_, _, _, gold], [Row, Col], Board).
-opponent_in([Pos | Positions], Board) :- is_opponent(Pos, Board); is_opponent(Positions, Board).
+% Tell if there is an opponent (and who is it exactly)
+% Examples:
+% 		- is_opponent(Who, [1, 1], [[0,0,rabbit,silver],[0,1,rabbit,silver],[7,6,horse,gold],[7,7,rabbit,gold]]).
+% 		- is_opponent(Who, [7, 6], [[0,0,rabbit,silver],[0,1,rabbit,silver],[7,6,horse,gold],[7,7,rabbit,gold]]).
+% 		- is_opponent(Who, [0, 1], [[0,0,rabbit,silver],[0,1,rabbit,silver],[7,6,horse,gold],[7,7,rabbit,gold]]).
+% 		- opponent_in([[0,1], [2,1]], [[0,0,rabbit,silver],[0,1,rabbit,silver],[7,6,horse,gold],[7,7,rabbit,gold]]).
+% 		- opponent_in([[0,2], [7,6]], [[0,0,rabbit,silver],[0,1,rabbit,silver],[7,6,horse,gold],[7,7,rabbit,gold]]).
+is_opponent([R, C, T, gold], [Row, Col | _], Board) :- who_is_there([R, C, T, gold], [Row, Col], Board).
+opponent_in([Position | Positions], Board) :- is_opponent(_, Position, Board); opponent_in(Positions, Board).
+
+% Return all the pieces in the positions that are opponents
+% TODO TEST
+% Examples:
+% 		- opponents_in(Opponents, [[0,1], [2,1]], [[0,0,rabbit,silver],[0,1,rabbit,silver],[7,6,horse,gold],[7,7,rabbit,gold]]).
+% 		- opponents_in(Opponents, [[0,2], [7,6]], [[0,0,rabbit,silver],[0,1,rabbit,silver],[7,6,horse,gold],[7,7,rabbit,gold]]).
+opponents_in([], [], _).
+opponents_in([ Piece | Opponents ], [Pos | Positions], Board) :- is_opponent(Piece, Pos, Board), opponents_in(Opponents, [Pos | Positions], Board).
+opponents_in(Opponents, [Pos | Positions], Board) :- opponents_in(Opponents, [Pos | Positions], Board).
 
 % Tell if a piece is next to a friend (ie. same type)
 % Examples:
@@ -83,17 +98,34 @@ opponent_in([Pos | Positions], Board) :- is_opponent(Pos, Board); is_opponent(Po
 next_to_friend([Row, Col, _, _], Board) :- fblr_positions(Positions, [Row, Col], null), friend_in(Positions, Board).
 
 % Tell if a piece is next to an opponent (ie. different type)
-% TODO : return opponents (we need their types)
+% TODO TEST
 % Examples:
 % 		- next_to_opponent([6,7,rabbit,silver], [[0,0,rabbit,silver],[0,1,rabbit,silver],[7,6,horse,gold],[7,7,rabbit,gold]]).
-next_to_opponent([Row, Col, _, _], Board) :- fblr_positions(Positions, [Row, Col], null), opponent_in(Positions, Board).
+next_to_opponent(Opponents, [Row, Col, _, _], Board) :- fblr_positions(Positions, [Row, Col], null), opponents_in(Opponents, Positions, Board).
 
-% Tell if a piece is frozen
-% Checks :
-% 		- stronger neighbors TODO
-% 		- friendly pieces TODO
-fblr_positions(Positions, Position, _) :-  front_position(Front, Position), left_position(Left, Position), right_position(Right, Position), back_position(Back, Position), clear(Positions, [ Front, Left, Right, Back ]).
-is_frozen(Piece, Board) :- 
+%% % For all the pieces of the first list,
+%% % true if at least one is stronger than the Piece
+%% % TODO
+%% one_is_stronger(Opponents, Piece).
+
+%% next_to_stronger_opponent(Piece, Board) :- next_to_opponent(Opponents, Piece, Board), one_is_stronger(Opponents, Piece).
+
+%% % Tell if a piece is frozen
+%% % TODO TEST
+%% % Checks :
+%% % 		- stronger neighbors
+%% % 		- friendly pieces
+%% is_frozen(Piece, Board) :- next_to_friend(Piece, Board).
+%% is_frozen(Piece, Board) :- next_to_stronger_opponent(Piece, Board).
+
+%% % Tell if a piece is on a trap
+%% is_on_trap([2, 2]).
+%% is_on_trap([2, 5]).
+%% is_on_trap([5, 2]).
+%% is_on_trap([5, 5]).
+
+%% % TODO TEST + COMMENTS
+is_on_trap_without_friend(Position, Gamestate, Board) :- is_on_trap(Position), fblr_positions(Positions, Position, _), \+friend_in(Positions, Board).
 
 % Get all possible moves of a piece with a specific board
 % WARNING : only works for silver pieces !
