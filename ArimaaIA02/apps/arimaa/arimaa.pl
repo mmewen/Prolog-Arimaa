@@ -21,7 +21,6 @@ get_moves([[[1,0],[2,0]],[[0,0],[1,0]],[[0,1],[0,0]],[[0,0],[0,1]]], Gamestate, 
 % Paste other predicates bellow this line
 % ------------------------------------------------------------------
 
-
 % ==== Tools ====
 concat([],L2,L2).
 concat([X|L1],L2,[X|RES]) :- concat(L1,L2,RES).
@@ -93,7 +92,8 @@ next_to_opponent([Row, Col, _, _], Board) :- fblr_positions(Positions, [Row, Col
 % Checks :
 % 		- stronger neighbors TODO
 % 		- friendly pieces TODO
-% is_frozen(Piece, Board) :-
+fblr_positions(Positions, Position, _) :-  front_position(Front, Position), left_position(Left, Position), right_position(Right, Position), back_position(Back, Position), clear(Positions, [ Front, Left, Right, Back ]).
+is_frozen(Piece, Board) :- 
 
 % Get all possible moves of a piece with a specific board
 % WARNING : only works for silver pieces !
@@ -106,3 +106,33 @@ next_to_opponent([Row, Col, _, _], Board) :- fblr_positions(Positions, [Row, Col
 % Returns :
 %	Moves : a sub list of [ [i-1, j], [i, j+1], [i+1, j], [i, j-1] ]
 possible_moves(Positions, [Row, Col, Type, silver], Board) :- fblr_positions(Positions, [Row, Col], Type).
+
+% Return all possible 1 step moves for all the pieces of our color,
+% for a gien Gamestate and Board
+% TODO
+all_possible_moves(Moves, Gamestate, Board).
+
+% Apply the given move to the given board
+% Checks :
+% 		- if a piece if eaten by a trap TODO
+apply_move(Gamestate2, Board2, M, Gamestate1, Board1).
+
+% Randomly pick one move out of all the Moves
+% and change the Gamestate and Board
+% TODO
+one_random_move(M, Moves, Gamestate, Board).
+
+% Move randomly one piece on the given board
+% TODO
+move_one(M, Gamestate2, Board2, Gamestate, Board) :- all_possible_moves(Moves, Gamestate, Board), one_random_move(M, Moves, Gamestate2, Board2).
+
+% Take 4 random move in the possible moves and play it
+% TODO
+four_random_moves([M1, M2, M3, M4], Gamestate, Board) :- move_one(M1, Gamestate2, Board2, Gamestate, Board),
+															move_one(M2, Gamestate3, Board3, Gamestate2, Board2),
+															move_one(M3, Gamestate4, Board4, Gamestate3, Board3),
+															move_one(M4, _, _, Gamestate4, Board4).
+
+% Random get_moves
+% TODO
+get_moves(Moves, Gamestate, Board) :- four_random_moves(Moves, Gamestate, Board).
