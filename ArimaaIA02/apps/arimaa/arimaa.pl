@@ -30,6 +30,15 @@ clear([], []).
 clear(Res, [ [] | List ]) :- clear(Res, List).
 clear([Item|Res], [ Item | List ]) :- clear(Res, List).
 
+% Replace an element in a list by another one
+% O : original term
+% R : replace
+% T : original list
+% T2 : new list
+replace(_, _, [], []).
+replace(O, R, [O|T], [R|T2]) :- replace(O, R, T, T2).
+replace(O, R, [H|T], [H|T2]) :- H \= O, replace(O, R, T, T2).
+
 
 % ==== Basic predicates ====
 
@@ -144,27 +153,31 @@ possible_moves(Positions, [Row, Col, Type, silver], Board) :- fblr_positions(Pos
 % TODO
 all_possible_moves(Moves, Gamestate, Board).
 
+% Checks if a piece if eaten by a trap 
+% Returns :
+%	New gamestate and new board
+apply_trap([_,[Occupant|Gamestate2]],Board2,Position,Gamestate1,Board1) :- is_on_trap_without_friend(Position,Gamestate1,Board1), who_is_there(Occupant, Position, Board1), delete(Occupant,Board1,Board2).
+
 % Apply the given move to the given board
-% Checks :
-% 		- if a piece if eaten by a trap TODO
-apply_move(Gamestate2, Board2, M, Gamestate1, Board1).
+% don't remove 
+% Returns :
+%	New gamestate and new board
+apply_move(Gamestate2, Board3, [Origin|(NewRow,NewCol)], Gamestate1, Board1) :- who_is_there([Row,Col,Type,Color], Origin, Board1), replace([Row,Col,Type,Color], [NewRow,NewCol,Type,Color], Board1, Board2),apply_trap(Gamestate2,Board3,Position,Gamestate1,Board2).
+apply_move(Gamestate1, Board3, [Origin|(NewRow,NewCol)], Gamestate1, Board1) :- who_is_there([Row,Col,Type,Color], Origin, Board1), replace([Row,Col,Type,Color], [NewRow,NewCol,Type,Color], Board1, Board2).
 
 % Randomly pick one move out of all the Moves
-% and change the Gamestate and Board
-% TODO
-one_random_move(M, Moves, Gamestate, Board).
+
+one_random_move(M, Moves) :- nth0(N,Moves,M), N is random(L), length(Moves,L).
 
 % Move randomly one piece on the given board
-% TODO
-move_one(M, Gamestate2, Board2, Gamestate, Board) :- all_possible_moves(Moves, Gamestate, Board), one_random_move(M, Moves, Gamestate2, Board2).
+% and change the Gamestate and Board
+move_one(M, Gamestate2, Board2, Gamestate, Board) :- all_possible_moves(Moves, Gamestate, Board), one_random_move(M, Moves), apply_move(Gamestate2, Board2, M, Gamestate, Board).
 
 % Take 4 random move in the possible moves and play it
-% TODO
 four_random_moves([M1, M2, M3, M4], Gamestate, Board) :- move_one(M1, Gamestate2, Board2, Gamestate, Board),
 															move_one(M2, Gamestate3, Board3, Gamestate2, Board2),
 															move_one(M3, Gamestate4, Board4, Gamestate3, Board3),
 															move_one(M4, _, _, Gamestate4, Board4).
 
 % Random get_moves
-% TODO
 get_moves(Moves, Gamestate, Board) :- four_random_moves(Moves, Gamestate, Board).
