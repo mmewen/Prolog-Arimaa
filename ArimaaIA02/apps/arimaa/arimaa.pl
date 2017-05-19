@@ -114,12 +114,14 @@ is_frozen(Piece, Board) :-
 % 		- type (rabbits can't go backward)
 % Returns :
 %	Moves : a sub list of [ [i-1, j], [i, j+1], [i+1, j], [i, j-1] ]
-possible_moves(Positions, [Row, Col, Type, silver], Board) :- fblr_positions(Positions, [Row, Col], Type).
+possible_moves([Positions,[Row, Col]], [Row, Col, Type, silver], Board) :- fblr_positions(Positions, [Row, Col], Type).
 
 % Return all possible 1 step moves for all the pieces of our color,
 % for a gien Gamestate and Board
-% TODO
-all_possible_moves(Moves, Gamestate, Board).
+% WARNING : only works for silver pieces !
+all_possible_moves([], []).
+all_possible_moves([M|Moves], [[Row,Col,Type,silver]|Board]) :- all_possible_moves(Moves,Board),possible_moves(M,[Row,Col],Board).
+all_possible_moves(Moves, [[Row,Col,Type,_]|Board]) :- all_possible_moves(Moves,Board).
 
 % Checks if a piece if eaten by a trap 
 % Returns :
@@ -130,8 +132,8 @@ apply_trap([_,[Occupant|Gamestate2]],Board2,Position,Gamestate1,Board1) :- is_on
 % don't remove 
 % Returns :
 %	New gamestate and new board
-apply_move(Gamestate2, Board3, [Origin|(NewRow,NewCol)], Gamestate1, Board1) :- who_is_there([Row,Col,Type,Color], Origin, Board1), replace([Row,Col,Type,Color], [NewRow,NewCol,Type,Color], Board1, Board2),apply_trap(Gamestate2,Board3,Position,Gamestate1,Board2).
-apply_move(Gamestate1, Board3, [Origin|(NewRow,NewCol)], Gamestate1, Board1) :- who_is_there([Row,Col,Type,Color], Origin, Board1), replace([Row,Col,Type,Color], [NewRow,NewCol,Type,Color], Board1, Board2).
+apply_move(Gamestate2, Board3, [Origin|[NewRow,NewCol]], Gamestate1, Board1) :- who_is_there([Row,Col,Type,Color], Origin, Board1), replace([Row,Col,Type,Color], [NewRow,NewCol,Type,Color], Board1, Board2),apply_trap(Gamestate2,Board3,Position,Gamestate1,Board2).
+apply_move(Gamestate1, Board3, [Origin|[NewRow,NewCol]], Gamestate1, Board1) :- who_is_there([Row,Col,Type,Color], Origin, Board1), replace([Row,Col,Type,Color], [NewRow,NewCol,Type,Color], Board1, Board2).
 
 % Randomly pick one move out of all the Moves
 
