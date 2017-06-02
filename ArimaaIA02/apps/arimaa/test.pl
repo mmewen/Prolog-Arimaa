@@ -121,6 +121,7 @@ next_to_stronger_opponent(Piece, Board) :- next_to_opponent(Opponents, Piece, Bo
 is_frozen(Piece, Board) :- next_to_stronger_opponent(Piece, Board), \+next_to_friend(Piece, Board).
 
 
+
 % Well, the name is pretty explicit here...
 % Checks :
 % 		- pos is a trap
@@ -183,13 +184,23 @@ all_possible_moves(Moves, [[Row,Col,Type,silver]|B],Board) :- all_possible_moves
 all_possible_moves(Moves, [_|B],Board) :- all_possible_moves(Moves,B,Board).
 all_possible_moves(Moves,Board) :- all_possible_moves(Moves,Board,Board).
 
+% Return new Gamestate and Board
+% Examples :
+%    - apply_trap(Gamestate,Board,[],[[2,2,rabbit,silver]]).
+apply_trap(_,_,_,[]]).
+apply_trap([[Row,Col,Type,Color]|Gamestate],Board,Gamestate,[[Row,Col,Type,Color]|Board]) :- is_on_trap_without_friend([Row,Col], Gamestate, Board).
+apply_trap(Gamestate,Board2,Gamestate,[_|Board]) :- apply_trap(Gamestate,Board2,Gamestate,Board).
+
 %% --- ABOVE ARE TESTED
+
 
 % Apply the given move to the given board
 % don't remove
 % Returns :
 %	New gamestate and new board
-apply_move(Gamestate2, Board3, [Origin|[NewRow,NewCol]], Gamestate1, Board1) :- who_is_there([Row,Col,Type,Color], Origin, Board1), replace([Row,Col,Type,Color], [NewRow,NewCol,Type,Color], Board1, Board2),apply_trap(Gamestate2,Board3,Position,Gamestate1,Board2).
+% Examples :
+%    - apply_move(Gamestate1, Board3, [[0, 1], [1, 1]], [], [[0,0,rabbit,silver],[0,1,rabbit,silver]]).
+apply_move(Gamestate2, Board3, [Origin|[NewRow,NewCol]], Gamestate1, Board1) :- who_is_there([Row,Col,Type,Color], Origin, Board1), replace([Row,Col,Type,Color], [NewRow,NewCol,Type,Color], Board1, Board2),apply_trap(Gamestate2,Board3,Gamestate1,Board2).
 apply_move(Gamestate1, Board3, [Origin|[NewRow,NewCol]], Gamestate1, Board1) :- who_is_there([Row,Col,Type,Color], Origin, Board1), replace([Row,Col,Type,Color], [NewRow,NewCol,Type,Color], Board1, Board2).
 
 
