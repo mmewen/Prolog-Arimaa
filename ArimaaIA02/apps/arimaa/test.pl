@@ -81,7 +81,7 @@ opponent_in([Position | Positions], Board) :- is_opponent(_, Position, Board); o
 % 		- opponents_in(Opponents, [[0,2], [7,6]], [[0,0,rabbit,silver],[0,1,rabbit,silver],[7,6,horse,gold],[7,7,rabbit,gold]]).
 opponents_in([], [], _).
 opponents_in([ Piece | Opponents ], [Pos | Positions], Board) :- is_opponent(Piece, Pos, Board), opponents_in(Opponents, Positions, Board).
-opponents_in(Opponents, [Pos | Positions], Board) :- opponents_in(Opponents, Positions, Board).
+opponents_in(Opponents, [_ | Positions], Board) :- opponents_in(Opponents, Positions, Board).
 
 % Tell if a piece is next to a friend (ie. same type)
 % Examples:
@@ -102,7 +102,7 @@ is_stronger(P1, P2) :- strength(S1, P1), strength(S2, P2), S1 > S2.
 % Examples:
 % 		- one_is_stronger([[7,6,horse,gold],[7,7,rabbit,gold]], [0,1,rabbit,silver]).
 one_is_stronger([O | _], P) :- is_stronger(O, P).
-one_is_stronger([O | Q], P) :- one_is_stronger(Q, P).
+one_is_stronger([_ | Q], P) :- one_is_stronger(Q, P).
 
 % True if is next to a stronger opponent
 % Examples:
@@ -136,7 +136,7 @@ is_on_trap_without_friend(Position, Gamestate, Board) :- is_on_trap(Position), f
 %	- free_position([0,0],[[0,0,rabbit,silver],[0,1,rabbit,silver],[7,6,horse,gold],[7,7,rabbit,gold]]).
 %	- free_position([1,0],[[0,0,rabbit,silver],[0,1,rabbit,silver],[7,6,horse,gold],[7,7,rabbit,gold]]).
 free_position(_,[]).
-free_position([Row,Col],[[Row,Col,_,_] | Board]) :- !,fail.
+free_position([Row,Col],[[Row,Col,_,_] | _]) :- !,fail.
 free_position(Position,[_ | Board]) :- free_position(Position,Board).
 
 % Test if position in position2 are free
@@ -147,7 +147,7 @@ free_position(Position,[_ | Board]) :- free_position(Position,Board).
 list_empty([]).
 free_positions([],_,[]).
 free_positions([P|Positions],Board,[P|Positions2]) :- free_position(P,Board), free_positions(Positions,Board,Positions2).
-free_positions(Positions,Board,[P|Positions2]) :- free_positions(Positions,Board,Positions2).
+free_positions(Positions,Board,[_|Positions2]) :- free_positions(Positions,Board,Positions2).
 
 % Get all possible moves of a piece with a specific board
 % WARNING : only works for silver pieces !
@@ -180,7 +180,7 @@ possible_moves_to_tuple([[Pos,M1_1]|M],Pos,[M1_1|M1]) :- possible_moves_to_tuple
 %    - all_possible_moves(Moves,[[0,0,rabbit,silver],[0,1,rabbit,silver]]).
 all_possible_moves([], [], _).
 all_possible_moves(Moves, [[Row,Col,Type,silver]|B],Board) :- all_possible_moves(Moves1,B,Board),possible_moves(M1,[Row,Col,Type,silver],Board),possible_moves_to_tuple(M2,[Row,Col],M1),concat(Moves,Moves1,M2).
-all_possible_moves(Moves, [[Row,Col,Type,_]|B],Board) :- all_possible_moves(Moves,B,Board).
+all_possible_moves(Moves, [_|B],Board) :- all_possible_moves(Moves,B,Board).
 all_possible_moves(Moves,Board) :- all_possible_moves(Moves,Board,Board).
 
 %% --- ABOVE ARE TESTED
