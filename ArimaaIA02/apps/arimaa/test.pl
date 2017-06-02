@@ -127,10 +127,10 @@ is_frozen(Piece, Board) :- next_to_stronger_opponent(Piece, Board), \+next_to_fr
 % 		- pos is a trap
 % 		- no close friend :/
 % Examples:
-% 		- is_on_trap_without_friend([2,2], [silver, [ [0,1,rabbit,silver],[0,2,horse,silver] ]], [[0,0,rabbit,silver],[0,1,rabbit,silver],[2,2,cat,silver],[7,6,horse,gold],[7,7,rabbit,gold]]).
-% 		- is_on_trap_without_friend([2,2], [silver, [ [0,1,rabbit,silver],[0,2,horse,silver] ]], [[0,0,rabbit,silver],[2,1,rabbit,silver],[2,2,cat,silver],[7,6,horse,gold],[7,7,rabbit,gold]]).
-% 		- is_on_trap_without_friend([0,0], [silver, [ [0,1,rabbit,silver],[0,2,horse,silver] ]], [[0,0,rabbit,silver],[2,1,rabbit,silver],[2,2,cat,silver],[7,6,horse,gold],[7,7,rabbit,gold]]).
-is_on_trap_without_friend(Position, Gamestate, Board) :- is_on_trap(Position), fblr_positions(Positions, Position, _), \+friend_in(Positions, Board).
+% 		- is_on_trap_without_friend([2,2], [[0,0,rabbit,silver],[0,1,rabbit,silver],[2,2,cat,silver],[7,6,horse,gold],[7,7,rabbit,gold]]).
+% 		- is_on_trap_without_friend([2,2], [[0,0,rabbit,silver],[2,1,rabbit,silver],[2,2,cat,silver],[7,6,horse,gold],[7,7,rabbit,gold]]).
+% 		- is_on_trap_without_friend([0,0], [[0,0,rabbit,silver],[2,1,rabbit,silver],[2,2,cat,silver],[7,6,horse,gold],[7,7,rabbit,gold]]).
+is_on_trap_without_friend(Position, Board) :- is_on_trap(Position), fblr_positions(Positions, Position, _), \+friend_in(Positions, Board).
 
 % true if there is noone on the position
 % Examples :
@@ -188,7 +188,7 @@ all_possible_moves(Moves,Board) :- all_possible_moves(Moves,Board,Board).
 % Examples :
 %    - apply_trap(Gamestate,Board,[],[[2,2,rabbit,silver]]).
 apply_trap(_,_,_,[]]).
-apply_trap([[Row,Col,Type,Color]|Gamestate],Board,Gamestate,[[Row,Col,Type,Color]|Board]) :- is_on_trap_without_friend([Row,Col], Gamestate, Board).
+apply_trap([[Row,Col,Type,Color]|Gamestate],Board,Gamestate,[[Row,Col,Type,Color]|Board]) :- is_on_trap_without_friend([Row,Col], Board).
 apply_trap(Gamestate,Board2,Gamestate,[_|Board]) :- apply_trap(Gamestate,Board2,Gamestate,Board).
 
 %% --- ABOVE ARE TESTED
