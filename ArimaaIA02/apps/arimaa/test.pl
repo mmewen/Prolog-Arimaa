@@ -120,12 +120,17 @@ next_to_stronger_opponent(Piece, Board) :- next_to_opponent(Opponents, Piece, Bo
 % 		- is_frozen([6,6,rabbit, silver], [[0,0,rabbit,silver],[0,1,rabbit,silver],[5,6,dog,silver],[7,6,horse,gold],[7,7,rabbit,gold]]).
 is_frozen(Piece, Board) :- next_to_stronger_opponent(Piece, Board), \+next_to_friend(Piece, Board).
 
-%% --- ABOVE ARE TESTED
 
-%% % TODO TEST + COMMENTS
+% Well, the name is pretty explicit here...
+% Checks :
+% 		- pos is a trap
+% 		- no close friend :/
+% Examples:
+% 		- is_on_trap_without_friend([2,2], [silver, [ [0,1,rabbit,silver],[0,2,horse,silver] ]], [[0,0,rabbit,silver],[0,1,rabbit,silver],[2,2,cat,silver],[7,6,horse,gold],[7,7,rabbit,gold]]).
+% 		- is_on_trap_without_friend([2,2], [silver, [ [0,1,rabbit,silver],[0,2,horse,silver] ]], [[0,0,rabbit,silver],[2,1,rabbit,silver],[2,2,cat,silver],[7,6,horse,gold],[7,7,rabbit,gold]]).
+% 		- is_on_trap_without_friend([0,0], [silver, [ [0,1,rabbit,silver],[0,2,horse,silver] ]], [[0,0,rabbit,silver],[2,1,rabbit,silver],[2,2,cat,silver],[7,6,horse,gold],[7,7,rabbit,gold]]).
 is_on_trap_without_friend(Position, Gamestate, Board) :- is_on_trap(Position), fblr_positions(Positions, Position, _), \+friend_in(Positions, Board).
 
-%--------------------------j'y arrive pas-------------------------------TODO
 % true if there is noone on the position
 % Examples :
 %	- free_position([0,0],[[0,0,rabbit,silver],[0,1,rabbit,silver],[7,6,horse,gold],[7,7,rabbit,gold]]).
@@ -143,7 +148,6 @@ list_empty([]).
 free_positions([],_,[]).
 free_positions([P|Positions],Board,[P|Positions2]) :- free_position(P,Board), free_positions(Positions,Board,Positions2).
 free_positions(Positions,Board,[P|Positions2]) :- free_positions(Positions,Board,Positions2).
-%----------------------------------------------------------------------------------
 
 % Get all possible moves of a piece with a specific board
 % WARNING : only works for silver pieces !
@@ -178,6 +182,8 @@ all_possible_moves([], [], _).
 all_possible_moves(Moves, [[Row,Col,Type,silver]|B],Board) :- all_possible_moves(Moves1,B,Board),possible_moves(M1,[Row,Col,Type,silver],Board),possible_moves_to_tuple(M2,[Row,Col],M1),concat(Moves,Moves1,M2).
 all_possible_moves(Moves, [[Row,Col,Type,_]|B],Board) :- all_possible_moves(Moves,B,Board).
 all_possible_moves(Moves,Board) :- all_possible_moves(Moves,Board,Board).
+
+%% --- ABOVE ARE TESTED
 
 % Apply the given move to the given board
 % don't remove
