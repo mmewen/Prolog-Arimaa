@@ -472,7 +472,11 @@ var ARIMAA_MAIN = ARIMAA_MAIN || function() {
 			commit_move_to_gametree();
 			viewer.gametree_goto(current_nodehandle.id);
 			show_board();
-			bot_move_call_prolog(result.gamestate.turn);
+			// when passing, call prolog only if it was the human playing 
+			if (result.gamestate.turn.side != "silver")
+			{
+				bot_move_call_prolog(result.gamestate.turn);
+			}
 		}
 	}
 	
@@ -713,6 +717,11 @@ var ARIMAA_MAIN = ARIMAA_MAIN || function() {
             GENERIC.for_each(move.steps, function(step) {
                 make_step_for_piece(step.from, step.to);
             });
+			
+			if (move.steps.length < 4)
+			{
+				pass_if_legal();
+			}
 
             current_show_step_delay = show_step_delay_bot;
             show_move_slowly(current_nodehandle.id, 0);
