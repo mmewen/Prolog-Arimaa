@@ -7,8 +7,17 @@ clear([], []).
 clear(Res, [ [] | List ]) :- clear(Res, List).
 clear([Item|Res], [ Item | List ]) :- clear(Res, List).
 
-nth(M, 0, [M | Moves]).
+nth(M, 0, [M | _]).
 nth(M, N, [_ | Moves]) :- N1 is N - 1, nth(M, N1, Moves).
+
+% Replace copy board1 (3) in board2 (1) + new piece (4) - old piece (2)
+% Replace3 copy board1 (3) in board2 (1) - old piece (2)
+% Examples:
+% 		- replace(Board2, [0, 1, rabbit, silver], [[0, 0, rabbit, silver], [0, 1, rabbit, silver]], [1, 1, rabbit, silver]).
+replace_3([], _, []).
+replace_3(B2, OldPiece, [OldPiece | B1]) :- replace_3(B2, OldPiece, B1).
+replace_3([Piece | B2], OldPiece, [Piece | B1]) :- replace_3(B2, OldPiece, B1).
+replace([[NewRow,NewCol,Type,Color] | Board2], OldPiece, Board1, [NewRow,NewCol,Type,Color]) :- replace_3(Board2, OldPiece, Board1).
 
 % ==== Facts ====
 
@@ -138,7 +147,7 @@ is_frozen(Piece, Board) :- next_to_stronger_opponent(Piece, Board), \+next_to_fr
 % 		- is_on_trap_without_friend([2,2], [[0,0,rabbit,silver],[0,1,rabbit,silver],[2,2,cat,silver],[7,6,horse,gold],[7,7,rabbit,gold]]).
 % 		- is_on_trap_without_friend([2,2], [[0,0,rabbit,silver],[2,1,rabbit,silver],[2,2,cat,silver],[7,6,horse,gold],[7,7,rabbit,gold]]).
 % 		- is_on_trap_without_friend([0,0], [[0,0,rabbit,silver],[2,1,rabbit,silver],[2,2,cat,silver],[7,6,horse,gold],[7,7,rabbit,gold]]).
-is_on_trap_without_friend(Position, Board) :- is_on_trap(Position), fblr_positions(Positions, Position, _), \+friend_in(Positions, Board).
+is_on_trap_without_friend(Position, Board) :- is_on_trap(Position), fblr_positions(Positions, Position, null), \+friend_in(Positions, Board).
 
 % true if there is noone on the position
 % Examples :
@@ -187,48 +196,58 @@ possible_moves_to_tuple([[Pos,M1_1]|M],Pos,[M1_1|M1]) :- possible_moves_to_tuple
 % Examples : 
 %    - all_possible_moves(Moves,[[0,0,rabbit,silver],[0,1,rabbit,silver],[5,6,dog,silver],[7,6,horse,gold],[7,7,rabbit,gold]]).
 %    - all_possible_moves(Moves,[[0,0,rabbit,silver],[0,1,rabbit,silver]]).
+%    - all_possible_moves(Moves,[[0,0,rabbit,silver],[2,2,rabbit,silver],[2,3,dog,gold]]).
 all_possible_moves([], [], _).
 all_possible_moves(Moves, [[Row,Col,Type,silver]|B],Board) :- all_possible_moves(Moves1,B,Board),possible_moves(M1,[Row,Col,Type,silver],Board),possible_moves_to_tuple(M2,[Row,Col],M1),concat(Moves,Moves1,M2).
 all_possible_moves(Moves, [_|B],Board) :- all_possible_moves(Moves,B,Board).
 all_possible_moves(Moves,Board) :- all_possible_moves(Moves,Board,Board).
 
-% Return new Gamestate and Board
+% Return new Gamestate and Board or false
 % Examples :
 %    - apply_trap(Gamestate,Board,[],[[2,2,rabbit,silver]]).
-apply_trap(_,_,_,[]]).
-apply_trap([[Row,Col,Type,Color]|Gamestate],Board,Gamestate,[[Row,Col,Type,Color]|Board]) :- is_on_trap_without_friend([Row,Col], Board).
-apply_trap(Gamestate,Board2,Gamestate,[_|Board]) :- apply_trap(Gamestate,Board2,Gamestate,Board).
-
-%% --- ABOVE ARE TESTED
-
+%    - apply_trap(Gamestate,Board,[],[[1,2,cat,silver]]).
+%    - apply_trap(Gamestate,Board,[],[[2,2,rabbit,silver],[1,2,cat,silver]]).
+%    - apply_trap(Gamestate,Board,[],[[1,2,cat,silver],[2,2,rabbit,silver]]).
+%    - apply_trap(Gamestate,Board,[],[[1,5,cat,silver],[2,2,rabbit,silver]]).
+apply_trap_3(Gamestate,Board,Gamestate,[], Board).
+apply_trap_3([[Row,Col,Type,Color]|Gamestate],Board2,Gamestate,[[Row,Col,Type,Color]|_], Board) :- is_on_trap_without_friend([Row,Col], Board), replace_3(Board2, [Row,Col,Type,Color], Board).
+apply_trap_3(Gamestate2,B2,Gamestate,[_|B], Board) :- apply_trap_3(Gamestate2,B2,Gamestate,B, Board).
+apply_trap(Gamestate2,B2,Gamestate,Board) :- apply_trap_3(Gamestate2,B2,Gamestate,Board, Board).
 
 % Apply the given move to the given board
 % don't remove
 % Returns :
 %	New gamestate and new board
 % Examples :
-%    - apply_move(Gamestate1, Board3, [[0, 1], [1, 1]], [], [[0,0,rabbit,silver],[0,1,rabbit,silver]]).
-apply_move(Gamestate2, Board3, [Origin|[NewRow,NewCol]], Gamestate1, Board1) :- who_is_there([Row,Col,Type,Color], Origin, Board1), replace([Row,Col,Type,Color], [NewRow,NewCol,Type,Color], Board1, Board2),apply_trap(Gamestate2,Board3,Gamestate1,Board2).
-apply_move(Gamestate1, Board3, [Origin|[NewRow,NewCol]], Gamestate1, Board1) :- who_is_there([Row,Col,Type,Color], Origin, Board1), replace([Row,Col,Type,Color], [NewRow,NewCol,Type,Color], Board1, Board2).
+%    - apply_move(Gamestate1, Board3, [[0, 1], [1, 1]], [], [[0,0,rabbit,silver], [0,1,rabbit,silver]]).
+%    - apply_move(Gamestate1, Board3, [[2, 1], [2, 2]], [], [[0,0,rabbit,silver], [2,1,rabbit,silver]]).
+%    - apply_move(Gamestate1, Board3, [[2, 1], [2, 2]], [], [[0,0,rabbit,silver], [2,1,rabbit,silver], [2,3,dog,silver]]).
+apply_move(Gamestate2, Board3, [Origin, [NewRow,NewCol]], Gamestate1, Board1) :- who_is_there([Row,Col,Type,Color], Origin, Board1), replace(Board2, [Row,Col,Type,Color], Board1, [NewRow,NewCol,Type,Color]), apply_trap(Gamestate2, Board3, Gamestate1, Board2).
 
 % Randomly pick one move out of all the Moves
 % and change the Gamestate and Board
 % Examples :
 %    - one_random_move(M, [[[0, 1], [1, 1]], [[0, 1], [0, 2]], [[0, 0], [1, 0]]]).
+one_random_move([], Moves) :- length(Moves,L), L = 0. % , print("ERROR : No move to pick at one_random_move").
 one_random_move(M, Moves) :- length(Moves,L), random(0, L, N), nth(M, N, Moves).
 
+%% --- ABOVE ARE TESTED
+
 % Move randomly one piece on the given board
-% TODO
-% (M, G1, B1, [[[0, 1], [1, 1]], [[0, 1], [0, 2]], [[0, 0], [1, 0]]], [silver, [ [0,1,rabbit,silver],[0,2,horse,silver] ] ], [[0,0,rabbit,silver],[0,1,rabbit,silver],[7,6,horse,gold],[7,7,rabbit,gold]]).
-move_one(M, Gamestate2, Board2, Gamestate, Board) :- all_possible_moves(Moves, Gamestate, Board), one_random_move(M, Moves), apply_move(Gamestate2, Board2, M, Gamestate, Board).
+% (M, G1, B1, [[[0, 1], [1, 1]], [[0, 1], [0, 2]], [[0, 0], [1, 0]]], [silver, [ [0,1,rabbit,silver], [0,2,horse,silver] ] ], [[0,0,rabbit,silver], [0,1,rabbit,silver], [7,6,horse,gold], [7,7,rabbit,gold]]).
+% Examples :
+%    - move_one(M, Gamestate2, Board2, [silver, []], [[0,0,rabbit,silver],[0,1,rabbit,silver],[7,5,rabbit,gold],[7,6,horse,gold],[7,7,rabbit,gold]]).
+move_one(M, Gamestate2, Board2, Gamestate, Board) :- all_possible_moves(Moves, Board), one_random_move(M, Moves), apply_move(Gamestate2, Board2, M, Gamestate, Board).
 
 % Take 4 random move in the possible moves and play it
-% TODO
+% Examples :
+%    - four_random_moves([M1, M2, M3, M4], [silver, []], [[0,0,rabbit,silver],[0,1,rabbit,silver],[7,5,rabbit,gold],[7,6,horse,gold],[7,7,rabbit,gold]]).
 four_random_moves([M1, M2, M3, M4], Gamestate, Board) :- move_one(M1, Gamestate2, Board2, Gamestate, Board),
 															move_one(M2, Gamestate3, Board3, Gamestate2, Board2),
 															move_one(M3, Gamestate4, Board4, Gamestate3, Board3),
 															move_one(M4, _, _, Gamestate4, Board4).
 
 % Random get_moves
-% TODO
+% Examples :
+%    - get_moves([M1, M2, M3, M4], [silver, []], [[0,0,rabbit,silver],[0,1,rabbit,silver],[7,5,rabbit,gold],[7,6,horse,gold],[7,7,rabbit,gold]]).
 get_moves(Moves, Gamestate, Board) :- four_random_moves(Moves, Gamestate, Board).
