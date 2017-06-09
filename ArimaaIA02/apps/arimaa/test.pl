@@ -1,4 +1,5 @@
-% ==== Tools ====
+% ===== TOOLS =====
+
 concat(L2,[],L2).
 concat([X|RES],[X|L1],L2) :- concat(RES,L1,L2).
 
@@ -19,7 +20,10 @@ replace_3(B2, OldPiece, [OldPiece | B1]) :- replace_3(B2, OldPiece, B1).
 replace_3([Piece | B2], OldPiece, [Piece | B1]) :- replace_3(B2, OldPiece, B1).
 replace([[NewRow,NewCol,Type,Color] | Board2], OldPiece, Board1, [NewRow,NewCol,Type,Color]) :- replace_3(Board2, OldPiece, Board1).
 
-% ==== Facts ====
+
+
+
+% ===== FACTS =====
 
 % Get the piece strength
 strength(1, rabbit).
@@ -36,7 +40,10 @@ is_on_trap([2, 5]).
 is_on_trap([5, 2]).
 is_on_trap([5, 5]).
 
-% ==== Basic predicates ====
+
+
+
+% ===== BASIC PREDICATES =====
 
 % Get pieces of a color still on the board
 % Returns :
@@ -224,6 +231,11 @@ apply_trap(Gamestate2,B2,Gamestate,Board) :- apply_trap_3(Gamestate2,B2,Gamestat
 %    - apply_move(Gamestate1, Board3, [[2, 1], [2, 2]], [], [[0,0,rabbit,silver], [2,1,rabbit,silver], [2,3,dog,silver]]).
 apply_move(Gamestate2, Board3, [Origin, [NewRow,NewCol]], Gamestate1, Board1) :- who_is_there([Row,Col,Type,Color], Origin, Board1), replace(Board2, [Row,Col,Type,Color], Board1, [NewRow,NewCol,Type,Color]), apply_trap(Gamestate2, Board3, Gamestate1, Board2).
 
+
+
+
+% ===== RANDOM MOVES =====
+
 % Randomly pick one move out of all the Moves
 % and change the Gamestate and Board
 % Examples :
@@ -231,21 +243,25 @@ apply_move(Gamestate2, Board3, [Origin, [NewRow,NewCol]], Gamestate1, Board1) :-
 one_random_move([], Moves) :- length(Moves,L), L = 0. % , print("ERROR : No move to pick at one_random_move").
 one_random_move(M, Moves) :- length(Moves,L), random(0, L, N), nth(M, N, Moves).
 
-%% --- ABOVE ARE TESTED
 
 % Move randomly one piece on the given board
 % (M, G1, B1, [[[0, 1], [1, 1]], [[0, 1], [0, 2]], [[0, 0], [1, 0]]], [silver, [ [0,1,rabbit,silver], [0,2,horse,silver] ] ], [[0,0,rabbit,silver], [0,1,rabbit,silver], [7,6,horse,gold], [7,7,rabbit,gold]]).
 % Examples :
-%    - move_one(M, Gamestate2, Board2, [silver, []], [[0,0,rabbit,silver],[0,1,rabbit,silver],[7,5,rabbit,gold],[7,6,horse,gold],[7,7,rabbit,gold]]).
-move_one(M, Gamestate2, Board2, Gamestate, Board) :- all_possible_moves(Moves, Board), one_random_move(M, Moves), apply_move(Gamestate2, Board2, M, Gamestate, Board).
+%    - move_one_random(M, Gamestate2, Board2, [silver, []], [[0,0,rabbit,silver],[0,1,rabbit,silver],[7,5,rabbit,gold],[7,6,horse,gold],[7,7,rabbit,gold]]).
+move_one_random(M, Gamestate2, Board2, Gamestate, Board) :- all_possible_moves(Moves, Board), one_random_move(M, Moves), apply_move(Gamestate2, Board2, M, Gamestate, Board).
 
 % Take 4 random move in the possible moves and play it
 % Examples :
 %    - four_random_moves([M1, M2, M3, M4], [silver, []], [[0,0,rabbit,silver],[0,1,rabbit,silver],[7,5,rabbit,gold],[7,6,horse,gold],[7,7,rabbit,gold]]).
-four_random_moves([M1, M2, M3, M4], Gamestate, Board) :- move_one(M1, Gamestate2, Board2, Gamestate, Board),
-															move_one(M2, Gamestate3, Board3, Gamestate2, Board2),
-															move_one(M3, Gamestate4, Board4, Gamestate3, Board3),
-															move_one(M4, _, _, Gamestate4, Board4).
+four_random_moves([M1, M2, M3, M4], Gamestate, Board) :- move_one_random(M1, Gamestate2, Board2, Gamestate, Board),
+															move_one_random(M2, Gamestate3, Board3, Gamestate2, Board2),
+															move_one_random(M3, Gamestate4, Board4, Gamestate3, Board3),
+															move_one_random(M4, _, _, Gamestate4, Board4).
+
+
+
+
+% ===== GET MOVES =====
 
 % Random get_moves
 % Examples :
