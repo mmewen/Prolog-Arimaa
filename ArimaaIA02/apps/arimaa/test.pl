@@ -261,6 +261,49 @@ four_random_moves([M1, M2, M3, M4], Gamestate, Board) :- move_one_random(M1, Gam
 
 
 
+% ========= SCORE =========
+
+% Return distance between two positions
+% Examples :
+%    - get_dist(D,[6,3],[4,5]).
+get_dist(D,[Row1,Col1],[Row2,Col2]) :- DR is Row1-Row2, DC is Col1-Col2, D is abs(DR)+abs(DC).
+
+% Return the distance from a position to the goal (silver only)
+% Examples :
+%    - get_dist_from_goal(D,[5,3]).
+%    - get_dist_from_goal(D,[7,1]).
+get_dist_from_goal(D,[Row,_]) :- D is 7-Row.
+
+
+
+%Return the closest position from a list and its distance for a given position
+% Examples :
+%    - get_closest(Pos,D,[[0,1]],[3,2]).
+%    - get_closest(Pos,D,[[0,0],[5,4],[7,2],[1,6]],[3,2]).
+get_closest_min(PosMin,DMin,PosMin,DMin,[],_).
+get_closest_min(Pos,Dres,Emin,Dmin,[E|L],Origin) :- get_dist(D,Origin,E), D < Dmin, get_closest_min(Pos,Dres,E,D,L,Origin).
+get_closest_min(Pos,D,PosMin,DMin,[_|L],Origin) :- get_closest_min(Pos,D,PosMin,DMin,L,Origin).
+get_closest(Pos,D,[Einit|L],Origin) :-  get_dist(Dinit,Origin,Einit),get_closest_min(Pos,D,Einit,Dinit,L,Origin).
+
+
+% TODO test
+
+
+% return the distance of a position to the closest free goal (silver only)
+get_dist_to_freedom(S,[Row,Col],Board) :- setof(C, free_position([7,C],Board), L),!,get_closest(L,[Row,Col]).
+
+
+% Return the score for a given board and gamestate
+% if we want to do it for another color, add it in parameter
+get_score(0,_,Board) :- win(Board).
+get_score(S,Gamestate,Board) :- get_score2(S,Gamestate,Board).
+get_score2(0,_,[]).
+get_score2(S,Gamestate,[[Row,Col,rabbit,silver]|Board]) :- get_score2(S1,Board), get_dist_to_freedom(S2,[Row,Col],Board), get_dist_from_goal(S3,[Row,Col]), S is S1+S2+S3.
+get_score2(S,Gamestate,[[Row,Col,Type,gold]|Board]) :- get_score2(S,Board).
+
+
+
+
 % ===== GET MOVES =====
 
 % Random get_moves
