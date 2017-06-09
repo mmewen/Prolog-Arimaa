@@ -20,6 +20,10 @@ replace_3(B2, OldPiece, [OldPiece | B1]) :- replace_3(B2, OldPiece, B1).
 replace_3([Piece | B2], OldPiece, [Piece | B1]) :- replace_3(B2, OldPiece, B1).
 replace([[NewRow,NewCol,Type,Color] | Board2], OldPiece, Board1, [NewRow,NewCol,Type,Color]) :- replace_3(Board2, OldPiece, Board1).
 
+% Returns true if the element M is in Ms.
+% Also works in generation : it can return every element of Ms in M.
+element(M, [M | _]).
+element(M, [_ | Ms]):- element(M, Ms).
 
 
 
@@ -261,7 +265,7 @@ four_random_moves([M1, M2, M3, M4], Gamestate, Board) :- move_one_random(M1, Gam
 
 
 
-% ========= SCORE =========
+% ===== SCORE =====
 
 % Return distance between two positions
 % Examples :
@@ -285,9 +289,7 @@ get_closest_min(Pos,Dres,Emin,Dmin,[E|L],Origin) :- get_dist(D,Origin,E), D < Dm
 get_closest_min(Pos,D,PosMin,DMin,[_|L],Origin) :- get_closest_min(Pos,D,PosMin,DMin,L,Origin).
 get_closest(Pos,D,[Einit|L],Origin) :-  get_dist(Dinit,Origin,Einit),get_closest_min(Pos,D,Einit,Dinit,L,Origin).
 
-
-% TODO test
-
+%% ---------------------------- IN THIS SECTION, ABOVE PREDICATES ARE TESTED ----------------------------
 
 % return the distance of a position to the closest free goal (silver only)
 % Examples :
@@ -307,9 +309,88 @@ get_score2(S,Gamestate,[[Row,Col,Type,gold]|Board]) :- get_score2(S,Board).
 
 
 
+% ===== BEST STATE AFTER X MOVES =====
+
+% Take one move out of all the Moves.
+% If called many times, will try every move given
+% Examples :
+%    - one_move(M, [[[0, 1], [1, 1]], [[0, 1], [0, 2]], [[0, 0], [1, 0]]]).
+one_move(M, Moves) :- element(M, Moves).
+
+% Apply the given moves to the given board.
+% Not one after another ! Just try every movement given the current board
+% Returns :
+%	[ [Moves, New gamestate, new board], ...]
+% Examples :
+%    - apply_moves(MGBArray, [[[2, 1], [2, 2]], [[0, 0], [0, 1]], [[0, 0], [1, 0]]], [], [[0,0,rabbit,silver], [2,1,rabbit,silver], [2,3,dog,silver]]).
+apply_moves([], [], _, _).
+apply_moves([[M, G, B] | StatesAfterMoves], [M | Moves], Gamestate, Board) :- apply_moves(StatesAfterMoves, Moves, Gamestate, Board),
+	apply_move(G, B, M, Gamestate, Board).
+
+% Sort the states according to their first argument (= their score)
+% Examples :
+%    - sort_states_by_score(SortedStates, [ [3, [[[2, 1], [2, 2]], [[0, 0], [0, 1]]], [], []], [5, [[[0, 0], [0, 1]], [[0, 0], [1, 0]]], [], []], [4, [[[2, 1], [2, 2]], [[0, 0], [0, 1]]], [], []] ]).
+sort_states_by_score(SortedStates, ScoredStates) :- sort(1, @=<, ScoredStates, SortedStates).
+
+% Take the state with the minimum score
+% min_score([Score, Moves, NewGamestate, NewBoard], ScoredStatesAfterNMoves)
+% Examples :
+%    - min_score(BestState, [ [3, [[[2, 1], [2, 2]], [[0, 0], [0, 1]]], [], []], [5, [[[0, 0], [0, 1]], [[0, 0], [1, 0]]], [], []], [4, [[[2, 1], [2, 2]], [[0, 0], [0, 1]]], [], []] ]).
+min_score(BestState, States) :- sort_states_by_score([BestState | _], States).
+
+% Keep the Q first elements of the array of things
+% or all the things if there are less than Q in it.
+% Examples :
+%    - keep_q_first(Kept, 5, [9, 8, 7, 6, 5, 4]).
+%    - keep_q_first(Kept, 10, [9, 8, 7, 6, 5, 4]).
+keep_q_first([], 0, _).
+keep_q_first([], _, []).
+keep_q_first([T | Kept], Q, [T | Things]) :- Q2 is Q - 1, keep_q_first(Kept, Q2, Things).
+
+% Keep the Q best states of the list of scored states
+% TODO: more efficient
+% Examples :
+%    - keep_q_best_scored_states(QBestStates, 2, [ [3, [[[2, 1], [2, 2]], [[0, 0], [0, 1]]], [], []], [5, [[[0, 0], [0, 1]], [[0, 0], [1, 0]]], [], []], [4, [[[2, 1], [2, 2]], [[0, 0], [0, 1]]], [], []] ]).
+keep_q_best_scored_states(QBestStates, Q, ScoredStates) :- sort_states_by_score(SortedStates, ScoredStates), keep_q_first(QBestStates, Q, SortedStates).
+
+%% ---------------------------- IN THIS SECTION, ABOVE PREDICATES ARE TESTED ----------------------------
+
+% Get the score of all the given states
+% get_states_score(ScoredStates, States)
+get_states_score([], []).
+get_states_score([[Score, M, G, B] | ScoredStates], [[M, G, B] | States]) :- get_states_score(ScoredStates, States), get_score(Score, G, B).
+
+% 
+%TODO
+q_best_n_moves([], 0, _, _, _).
+q_best_n_moves(Moves2, N, Q, Gamestate, Board) :- all_possible_moves(Moves, Board),
+	apply_moves(StatesAfterNMoves, Moves, Gamestate, Board),
+	get_states_score(ScoredStatesAfterNMoves, StatesAfterNMoves),
+	keep_q_best_scored_states(QBestStates, Q, ScoredStatesAfterNMoves),
+	N2 is N-1,
+	explore_n_moves(Moves2, N2, QBestStates).
+
+% Get the Q best states possible from the current state in N moves,
+% Compute their score
+% Keep the best
+% Play the corresponding moves
+best_state(Moves, Gamestate, Board) :- q_best_n_moves(StatesAfterNMoves, 4, 3, Gamestate, Board),
+	get_states_score(ScoredStatesAfterNMoves, StatesAfterNMoves),
+	min_score([Score, Moves, _, _], ScoredStatesAfterNMoves),
+	print("Moves"),
+	print(Moves),
+	print("Score :"),
+	print(Score).
+
+
+
+
 % ===== GET MOVES =====
 
 % Random get_moves
 % Examples :
 %    - get_moves([M1, M2, M3, M4], [silver, []], [[0,0,rabbit,silver],[0,1,rabbit,silver],[7,5,rabbit,gold],[7,6,horse,gold],[7,7,rabbit,gold]]).
-get_moves(Moves, Gamestate, Board) :- four_random_moves(Moves, Gamestate, Board).
+% get_moves(Moves, Gamestate, Board) :- four_random_moves(Moves, Gamestate, Board).
+
+% Best state get_moves
+get_moves(Moves, Gamestate, Board) :- best_state(Moves, Gamestate, Board).
