@@ -44,6 +44,15 @@ is_on_trap([2, 5]).
 is_on_trap([5, 2]).
 is_on_trap([5, 5]).
 
+goal([7,0]).
+goal([7,1]).
+goal([7,2]).
+goal([7,3]).
+goal([7,4]).
+goal([7,5]).
+goal([7,6]).
+goal([7,7]).
+
 
 
 
@@ -289,19 +298,40 @@ get_closest_min(Pos,Dres,Emin,Dmin,[E|L],Origin) :- get_dist(D,Origin,E), D < Dm
 get_closest_min(Pos,D,PosMin,DMin,[_|L],Origin) :- get_closest_min(Pos,D,PosMin,DMin,L,Origin).
 get_closest(Pos,D,[Einit|L],Origin) :-  get_dist(Dinit,Origin,Einit),get_closest_min(Pos,D,Einit,Dinit,L,Origin).
 
-%% ---------------------------- IN THIS SECTION, ABOVE PREDICATES ARE TESTED ----------------------------
 
 % return the distance of a position to the closest free goal (silver only)
-get_dist_to_freedom(S,[Row,Col],Board) :- setof(C, free_position([7,C],Board), L),!,get_closest(L,[Row,Col]).
+% Examples :
+%    - get_dist_to_freedom(S,[0,1],[[0,0,rabbit,silver],[0,1,rabbit,silver],[7,5,rabbit,gold],[7,6,horse,gold],[7,7,rabbit,gold]]).
+%    - get_dist_to_freedom(S,[2,3],[[7,2,rabbit,gold],[7,3,rabbit,gold],[7,4,rabbit,gold],[7,5,horse,gold],[7,7,rabbit,gold]]).
+get_dist_to_freedom(S,[Row,Col],Board) :- setof(X, goal(X), L), free_positions(Positions,Board,L), get_closest(Pos,S,Positions,[Row,Col]).
 
+%Erase if silver win with the given board
+%Examples :
+%    - win([[6,3,rabbit,silver],[4,6,rabbit,silver]]).
+%    - win([[6,3,rabbit,silver],[7,6,rabbit,silver]]).
+win([[7,_,rabbit,silver]|Board]).
+win([_|Board]) :- win(Board).
+
+%% ---------------------------- IN THIS SECTION, ABOVE PREDICATES ARE TESTED ----------------------------
+
+% Return the score of silver for the given gamestate
+% Examples :
+%    - get_taken_piece_score(S,[silver,[[0,0,rabbit,silver],[0,1,rabbit,silver],[0,5,elephant,silver],[7,5,rabbit,gold],[7,6,horse,gold]]]).
+% TODO we could soustract when it's a gold piece
+get_taken_piece_score(0,[]).
+get_taken_piece_score(S,[[Row,Col,Type,silver] | List]) :- get_taken_piece_score(S1,List), strength(S2,Type), S is S1+S2.
+get_taken_piece_score(S,[[_,_,_,gold] | List]) :- get_taken_piece_score(S,List).
+get_taken_piece_score(S,[silver,List]) :- get_taken_piece_score(S,List).
 
 % Return the score for a given board and gamestate
 % if we want to do it for another color, add it in parameter
+% Example :
+%    - get_score(S,[silver,[[0,0,camel,silver],[0,1,dog,silver]]],[[2,3,rabbit,silver],[3,6,rabbit,silver],[7,2,rabbit,gold],[7,3,rabbit,gold],[7,4,rabbit,gold],[7,5,horse,gold],[7,7,rabbit,gold]]).
 get_score(0,_,Board) :- win(Board).
-get_score(S,Gamestate,Board) :- get_score2(S,Gamestate,Board).
-get_score2(0,_,[]).
-get_score2(S,Gamestate,[[Row,Col,rabbit,silver]|Board]) :- get_score2(S1,Board), get_dist_to_freedom(S2,[Row,Col],Board), get_dist_from_goal(S3,[Row,Col]), S is S1+S2+S3.
-get_score2(S,Gamestate,[[Row,Col,Type,gold]|Board]) :- get_score2(S,Board).
+get_score(S,Gamestate,Board) :- get_score2(S1,Board), get_taken_piece_score(S2,Gamestate), S is S1+S2*10.
+get_score2(0,[]).
+get_score2(S,[[Row,Col,rabbit,silver]|Board]) :- get_score2(S1,Board), get_dist_to_freedom(S2,[Row,Col],Board), get_dist_from_goal(S3,[Row,Col]), S is S1+S2+S3.
+get_score2(S,[_|Board]) :- get_score2(S,Board).
 
 
 
