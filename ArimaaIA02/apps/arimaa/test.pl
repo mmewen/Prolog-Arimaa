@@ -399,9 +399,10 @@ append_previous_moves([[S, Moves, G, B] | BestStates], [ [S, M, G, B] | BestStat
 %    - explore_n_moves(BestStates, 1, 2, [ [12,[[[2, 1], [2, 2]], [[0, 0], [0, 1]]], [silver,[[0,0,camel,silver]]], [[7,5,horse,gold],[7,7,rabbit,gold]]] ]).
 explore_n_moves(States, 0, _, States) :- !.
 explore_n_moves([], _, _, []).
-explore_n_moves([BestStates | BestStates1], N, Q, [ [_, M, G, B] | StatesToExplore ]) :- explore_n_moves(BestStates1, N, Q, StatesToExplore),
+explore_n_moves(BestStates, N, Q, [ [_, M, G, B] | StatesToExplore ]) :- explore_n_moves(BestStates1, N, Q, StatesToExplore),
 	q_best_n_moves(BestStates2, N, Q, G, B),
-	append_previous_moves(BestStates, BestStates2, M).
+	append_previous_moves(BestStates3, BestStates2, M),
+	concat(BestStates, BestStates1, BestStates3).
 
 % From the given board, get all the possible 1 step moves
 % Compute all the states [ MovesToGetToThisState, NewGamestate, NewBoard ] we would have if
