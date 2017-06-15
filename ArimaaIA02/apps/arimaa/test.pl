@@ -294,7 +294,7 @@ get_dist_from_goal(D,[Row,_]) :- D is 7-Row.
 %    - get_closest(Pos,D,[[0,1]],[3,2]).
 %    - get_closest(Pos,D,[[0,0],[5,4],[7,2],[1,6]],[3,2]).
 get_closest_min(PosMin,DMin,PosMin,DMin,[],_).
-get_closest_min(Pos,Dres,Emin,Dmin,[E|L],Origin) :- get_dist(D,Origin,E), D < Dmin, get_closest_min(Pos,Dres,E,D,L,Origin).
+get_closest_min(Pos,Dres,_,Dmin,[E|L],Origin) :- get_dist(D,Origin,E), D < Dmin, get_closest_min(Pos,Dres,E,D,L,Origin).
 get_closest_min(Pos,D,PosMin,DMin,[_|L],Origin) :- get_closest_min(Pos,D,PosMin,DMin,L,Origin).
 get_closest(Pos,D,[Einit|L],Origin) :-  get_dist(Dinit,Origin,Einit),get_closest_min(Pos,D,Einit,Dinit,L,Origin).
 
@@ -303,13 +303,13 @@ get_closest(Pos,D,[Einit|L],Origin) :-  get_dist(Dinit,Origin,Einit),get_closest
 % Examples :
 %    - get_dist_to_freedom(S,[0,1],[[0,0,rabbit,silver],[0,1,rabbit,silver],[7,5,rabbit,gold],[7,6,horse,gold],[7,7,rabbit,gold]]).
 %    - get_dist_to_freedom(S,[2,3],[[7,2,rabbit,gold],[7,3,rabbit,gold],[7,4,rabbit,gold],[7,5,horse,gold],[7,7,rabbit,gold]]).
-get_dist_to_freedom(S,[Row,Col],Board) :- setof(X, goal(X), L), free_positions(Positions,Board,L), get_closest(Pos,S,Positions,[Row,Col]).
+get_dist_to_freedom(S,[Row,Col],Board) :- setof(X, goal(X), L), free_positions(Positions,Board,L), get_closest(_,S,Positions,[Row,Col]).
 
 %Erase if silver win with the given board
 %Examples :
 %    - win([[6,3,rabbit,silver],[4,6,rabbit,silver]]).
 %    - win([[6,3,rabbit,silver],[7,6,rabbit,silver]]).
-win([[7,_,rabbit,silver]|Board]).
+win([[7,_,rabbit,silver]|_]).
 win([_|Board]) :- win(Board).
 
 %% ---------------------------- IN THIS SECTION, ABOVE PREDICATES ARE TESTED ----------------------------
@@ -319,7 +319,7 @@ win([_|Board]) :- win(Board).
 %    - get_taken_piece_score(S,[silver,[[0,0,rabbit,silver],[0,1,rabbit,silver],[0,5,elephant,silver],[7,5,rabbit,gold],[7,6,horse,gold]]]).
 % TODO we could soustract when it's a gold piece
 get_taken_piece_score(0,[]).
-get_taken_piece_score(S,[[Row,Col,Type,silver] | List]) :- get_taken_piece_score(S1,List), strength(S2,Type), S is S1+S2.
+get_taken_piece_score(S,[[_,_,Type,silver] | List]) :- get_taken_piece_score(S1,List), strength(S2,Type), S is S1+S2.
 get_taken_piece_score(S,[[_,_,_,gold] | List]) :- get_taken_piece_score(S,List).
 get_taken_piece_score(S,[silver,List]) :- get_taken_piece_score(S,List).
 
@@ -351,7 +351,7 @@ one_move(M, Moves) :- element(M, Moves).
 % Examples :
 %    - apply_moves(MGBArray, [[[2, 1], [2, 2]], [[0, 0], [0, 1]], [[0, 0], [1, 0]]], [], [[0,0,rabbit,silver], [2,1,rabbit,silver], [2,3,dog,silver]]).
 apply_moves([], [], _, _).
-apply_moves([[M, G, B] | StatesAfterMoves], [M | Moves], Gamestate, Board) :- apply_moves(StatesAfterMoves, Moves, Gamestate, Board),
+apply_moves([[[M], G, B] | StatesAfterMoves], [M | Moves], Gamestate, Board) :- apply_moves(StatesAfterMoves, Moves, Gamestate, Board),
 	apply_move(G, B, M, Gamestate, Board).
 
 % Sort the states according to their first argument (= their score)
@@ -380,13 +380,28 @@ keep_q_first([T | Kept], Q, [T | Things]) :- Q2 is Q - 1, keep_q_first(Kept, Q2,
 %    - keep_q_best_scored_states(QBestStates, 2, [ [3, [[[2, 1], [2, 2]], [[0, 0], [0, 1]]], [], []], [5, [[[0, 0], [0, 1]], [[0, 0], [1, 0]]], [], []], [4, [[[2, 1], [2, 2]], [[0, 0], [0, 1]]], [], []] ]).
 keep_q_best_scored_states(QBestStates, Q, ScoredStates) :- sort_states_by_score(SortedStates, ScoredStates), keep_q_first(QBestStates, Q, SortedStates).
 
-%% ---------------------------- IN THIS SECTION, ABOVE PREDICATES ARE TESTED ----------------------------
-
 % Get the score of all the given states
 % get_states_score(ScoredStates, States)
-%    - get_states_score(ScoredStates, [ [[[[2, 1], [2, 2]], [[0, 0], [0, 1]]], [], []], [[[[0, 0], [0, 1]], [[0, 0], [1, 0]]], [], []], [[[[2, 1], [2, 2]], [[0, 0], [0, 1]]], [], []] ]).
+%    - get_states_score(ScoredStates, [ [[], [silver,[[0,0,camel,silver],[0,1,dog,silver]]], [[2,3,rabbit,silver],[3,6,rabbit,silver],[7,2,rabbit,gold],[7,3,rabbit,gold],[7,4,rabbit,gold],[7,5,horse,gold],[7,7,rabbit,gold]]], [[], [silver,[[0,0,camel,silver],[0,1,dog,silver]]], [[7,1,rabbit,silver],[3,6,rabbit,silver],[7,2,rabbit,gold],[7,3,rabbit,gold],[7,4,rabbit,gold],[7,5,horse,gold],[7,7,rabbit,gold]]]]).
 get_states_score([], []).
 get_states_score([[Score, M, G, B] | ScoredStates], [[M, G, B] | States]) :- get_states_score(ScoredStates, States), get_score(Score, G, B).
+
+% Examples :
+%    - append_previous_moves(BestStates, [ [12,[[[2, 1], [2, 2]], [[0, 0], [0, 1]]], [silver,[[0,0,camel,silver]]], [[7,5,horse,gold],[7,7,rabbit,gold]]], [42, [[[0, 0], [0, 1]], [[0, 0], [1, 0]]], [silver,[[0,1,dog,silver]]], [[7,1,rabbit,silver]]] ], [[[2, 1], [2, 2]]]).
+append_previous_moves([], [], _).
+append_previous_moves([[S, Moves, G, B] | BestStates], [ [S, M, G, B] | BestStates2 ], PreviousMoves) :- append_previous_moves(BestStates, BestStates2, PreviousMoves), concat(Moves, PreviousMoves, M).
+
+%% ---------------------------- IN THIS SECTION, ABOVE PREDICATES ARE TESTED ----------------------------
+
+% Examples :
+%    - explore_n_moves(BestStates, 0, 2, [ [12,[[[2, 1], [2, 2]], [[0, 0], [0, 1]]], [silver,[[0,0,camel,silver]]], [[7,5,horse,gold],[7,7,rabbit,gold]]] ]).
+%    - explore_n_moves(BestStates, 1, 2, [ [12,[[[2, 1], [2, 2]], [[0, 0], [0, 1]]], [silver,[[0,0,camel,silver]]], [[5,4,horse,silver],[7,7,rabbit,gold]]], [42, [[[0, 0], [0, 1]], [[0, 0], [1, 0]]], [silver,[[0,1,dog,silver]]], [[6,1,rabbit,silver]]] ]).
+%    - explore_n_moves(BestStates, 1, 2, [ [12,[[[2, 1], [2, 2]], [[0, 0], [0, 1]]], [silver,[[0,0,camel,silver]]], [[7,5,horse,gold],[7,7,rabbit,gold]]] ]).
+explore_n_moves(States, 0, _, States).
+explore_n_moves([], _, _, []).
+explore_n_moves([BestStates | BestStates1], N, Q, [ [_, M, G, B] | StatesToExplore ]) :- explore_n_moves(BestStates1, N, Q, StatesToExplore),
+	q_best_n_moves(BestStates2, N, Q, G, B),
+	append_previous_moves(BestStates, BestStates2, M).
 
 % From the given board, get all the possible 1 step moves
 % Compute all the states [ MovesToGetToThisState, NewGamestate, NewBoard ] we would have if
@@ -396,19 +411,21 @@ get_states_score([[Score, M, G, B] | ScoredStates], [[M, G, B] | States]) :- get
 % Keep only the Q better states
 % For each of these Q states, explore them (n-1 moves remaining)
 % Return Q^N states
-%TODO
+% Examples :
+%    - q_best_n_moves(BestStates, 1, 2, [silver,[[0,0,camel,silver]]], [[5,4,horse,silver],[7,7,rabbit,gold]]).
 q_best_n_moves([], 0, _, _, _).
 q_best_n_moves(BestStates, N, Q, Gamestate, Board) :- all_possible_moves(Moves, Board),
 	apply_moves(StatesAfterNMoves, Moves, Gamestate, Board), % !!!! TODO give the previous moves to put in the states moves !!
 	get_states_score(ScoredStatesAfterNMoves, StatesAfterNMoves),
 	keep_q_best_scored_states(QBestStates, Q, ScoredStatesAfterNMoves),
 	N2 is N-1,
-	explore_n_moves(Moves2, N2, QBestStates).
+	explore_n_moves(BestStates, N2, Q, QBestStates).
 
 % Get the Q best states possible from the current state in N moves,
 % Compute their score
 % Keep the best
-% Play the corresponding moves
+% Play the corresponding moves% Examples :
+%    - best_state(Moves, Gamestate, Board) 
 best_state(Moves, Gamestate, Board) :- q_best_n_moves(StatesAfterNMoves, 4, 3, Gamestate, Board),
 	get_states_score(ScoredStatesAfterNMoves, StatesAfterNMoves),
 	min_score([Score, Moves, _, _], ScoredStatesAfterNMoves),
