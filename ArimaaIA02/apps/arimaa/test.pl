@@ -354,14 +354,22 @@ keep_q_best_scored_states(QBestStates, Q, ScoredStates) :- sort_states_by_score(
 
 % Get the score of all the given states
 % get_states_score(ScoredStates, States)
+%    - get_states_score(ScoredStates, [ [[[[2, 1], [2, 2]], [[0, 0], [0, 1]]], [], []], [[[[0, 0], [0, 1]], [[0, 0], [1, 0]]], [], []], [[[[2, 1], [2, 2]], [[0, 0], [0, 1]]], [], []] ]).
 get_states_score([], []).
 get_states_score([[Score, M, G, B] | ScoredStates], [[M, G, B] | States]) :- get_states_score(ScoredStates, States), get_score(Score, G, B).
 
-% 
+% From the given board, get all the possible 1 step moves
+% Compute all the states [ MovesToGetToThisState, NewGamestate, NewBoard ] we would have if
+% we apply each of the 1 step moves
+% Compute the score of each state : [ StateScore, MovesToGetToThisState, NewGamestate, NewBoard ]
+% (the smaller the better)
+% Keep only the Q better states
+% For each of these Q states, explore them (n-1 moves remaining)
+% Return Q^N states
 %TODO
 q_best_n_moves([], 0, _, _, _).
-q_best_n_moves(Moves2, N, Q, Gamestate, Board) :- all_possible_moves(Moves, Board),
-	apply_moves(StatesAfterNMoves, Moves, Gamestate, Board),
+q_best_n_moves(BestStates, N, Q, Gamestate, Board) :- all_possible_moves(Moves, Board),
+	apply_moves(StatesAfterNMoves, Moves, Gamestate, Board), % !!!! TODO give the previous moves to put in the states moves !!
 	get_states_score(ScoredStatesAfterNMoves, StatesAfterNMoves),
 	keep_q_best_scored_states(QBestStates, Q, ScoredStatesAfterNMoves),
 	N2 is N-1,
