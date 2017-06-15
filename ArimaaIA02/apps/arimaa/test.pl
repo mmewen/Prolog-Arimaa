@@ -302,8 +302,9 @@ get_closest(Pos,D,[Einit|L],Origin) :-  get_dist(Dinit,Origin,Einit),get_closest
 % return the distance of a position to the closest free goal (silver only)
 % Examples :
 %    - get_dist_to_freedom(S,[0,1],[[0,0,rabbit,silver],[0,1,rabbit,silver],[7,5,rabbit,gold],[7,6,horse,gold],[7,7,rabbit,gold]]).
-%    - get_dist_to_freedom(S,[2,3],[[7,2,rabbit,gold],[7,3,rabbit,gold],[7,4,rabbit,gold],[7,5,horse,gold],[7,7,rabbit,gold]]).
+%    - get_dist_to_freedom(S,[4,3],[[7,0,rabbit,gold],[7,1,rabbit,gold],[7,2,rabbit,gold],[7,3,rabbit,gold],[7,4,rabbit,gold],[7,5,horse,gold],[7,6,rabbit,gold],[7,7,rabbit,gold]]).
 get_dist_to_freedom(S,[Row,Col],Board) :- setof(X, goal(X), L), free_positions(Positions,Board,L), get_closest(_,S,Positions,[Row,Col]).
+get_dist_to_freedom(7,[Row,Col],Board) :- setof(X, goal(X), L), free_positions(Positions,Board,L), list_empty(Positions).
 
 %Erase if silver win with the given board
 %Examples :
