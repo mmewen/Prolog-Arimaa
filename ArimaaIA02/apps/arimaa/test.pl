@@ -414,7 +414,7 @@ explore_n_moves(BestStates, N, Q, [ [_, M, G, B] | StatesToExplore ]) :- explore
 % For each of these Q states, explore them (n-1 moves remaining)
 % Return Q^N states
 % Examples :
-%    - q_best_n_moves(BestStates, 1, 2, [silver,[[0,0,camel,silver]]], [[5,4,horse,silver],[7,7,rabbit,gold]]).
+%    - q_best_n_moves(BestStates, 1, 2, [silver,[[0,0,camel,silver]]], [[0,0,rabbit,silver], [0,1,rabbit,silver], [5,4,horse,silver],[7,7,rabbit,gold]]).
 q_best_n_moves([], 0, _, _, _) :- !.
 q_best_n_moves(BestStates, N, Q, Gamestate, Board) :-
 	all_possible_moves(Moves, Board),
@@ -424,18 +424,22 @@ q_best_n_moves(BestStates, N, Q, Gamestate, Board) :-
 	N2 is N-1,
 	explore_n_moves(BestStates, N2, Q, QBestStates).
 
+remove_score([], []).
+remove_score([ [M, G, B] | UnscoredStates], [ [_, M, G, B] |ScoredStates]) :- remove_score(UnscoredStates, ScoredStates).
+
 % Get the Q best states possible from the current state in N moves,
 % Compute their score
 % Keep the best
 % Play the corresponding moves% Examples :
 %    - best_state(Moves, Gamestate, Board) 
 best_state(Moves, Gamestate, Board) :- q_best_n_moves(StatesAfterNMoves, 4, 3, Gamestate, Board),
-	get_states_score(ScoredStatesAfterNMoves, StatesAfterNMoves),
-	min_score([Score, Moves, _, _], ScoredStatesAfterNMoves),
-	print("Moves"),
-	print(Moves),
-	print("Score :"),
-	print(Score).
+	remove_score(UnscoredStates, StatesAfterNMoves),
+	get_states_score(ScoredStatesAfterNMoves, UnscoredStates),
+	min_score([Score, Moves, _, _], ScoredStatesAfterNMoves).
+	%% print("Moves"),
+	%% print(Moves),
+	%% print("Score :"),
+	%% print(Score).
 
 
 
