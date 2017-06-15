@@ -329,7 +329,7 @@ get_taken_piece_score(S,[silver,List]) :- get_taken_piece_score(S,List).
 % Example :
 %    - get_score(S,[silver,[[0,0,camel,silver],[0,1,dog,silver]]],[[2,3,rabbit,silver],[3,6,rabbit,silver],[7,2,rabbit,gold],[7,3,rabbit,gold],[7,4,rabbit,gold],[7,5,horse,gold],[7,7,rabbit,gold]]).
 get_score(0,_,Board) :- win(Board).
-get_score(S,Gamestate,Board) :- get_score2(S1,Board), get_taken_piece_score(S2,Gamestate), S is S1+S2*10.
+get_score(S,Gamestate,Board) :- get_score2(S1,Board), get_taken_piece_score(S2,Gamestate), S is S1+S2*20.
 get_score2(0,[]).
 get_score2(S,[[Row,Col,rabbit,silver]|Board]) :- get_score2(S1,Board), get_dist_to_freedom(S2,[Row,Col],Board), get_dist_from_goal(S3,[Row,Col]), S is S1+S2+S3.
 get_score2(S,[_|Board]) :- get_score2(S,Board).
