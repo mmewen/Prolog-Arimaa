@@ -397,7 +397,7 @@ append_previous_moves([[S, Moves, G, B] | BestStates], [ [S, M, G, B] | BestStat
 %    - explore_n_moves(BestStates, 0, 2, [ [12,[[[2, 1], [2, 2]], [[0, 0], [0, 1]]], [silver,[[0,0,camel,silver]]], [[7,5,horse,gold],[7,7,rabbit,gold]]] ]).
 %    - explore_n_moves(BestStates, 1, 2, [ [12,[[[2, 1], [2, 2]], [[0, 0], [0, 1]]], [silver,[[0,0,camel,silver]]], [[5,4,horse,silver],[7,7,rabbit,gold]]], [42, [[[0, 0], [0, 1]], [[0, 0], [1, 0]]], [silver,[[0,1,dog,silver]]], [[6,1,rabbit,silver]]] ]).
 %    - explore_n_moves(BestStates, 1, 2, [ [12,[[[2, 1], [2, 2]], [[0, 0], [0, 1]]], [silver,[[0,0,camel,silver]]], [[7,5,horse,gold],[7,7,rabbit,gold]]] ]).
-explore_n_moves(States, 0, _, States).
+explore_n_moves(States, 0, _, States) :- !.
 explore_n_moves([], _, _, []).
 explore_n_moves([BestStates | BestStates1], N, Q, [ [_, M, G, B] | StatesToExplore ]) :- explore_n_moves(BestStates1, N, Q, StatesToExplore),
 	q_best_n_moves(BestStates2, N, Q, G, B),
@@ -413,8 +413,9 @@ explore_n_moves([BestStates | BestStates1], N, Q, [ [_, M, G, B] | StatesToExplo
 % Return Q^N states
 % Examples :
 %    - q_best_n_moves(BestStates, 1, 2, [silver,[[0,0,camel,silver]]], [[5,4,horse,silver],[7,7,rabbit,gold]]).
-q_best_n_moves([], 0, _, _, _).
-q_best_n_moves(BestStates, N, Q, Gamestate, Board) :- all_possible_moves(Moves, Board),
+q_best_n_moves([], 0, _, _, _) :- !.
+q_best_n_moves(BestStates, N, Q, Gamestate, Board) :-
+	all_possible_moves(Moves, Board),
 	apply_moves(StatesAfterNMoves, Moves, Gamestate, Board), % !!!! TODO give the previous moves to put in the states moves !!
 	get_states_score(ScoredStatesAfterNMoves, StatesAfterNMoves),
 	keep_q_best_scored_states(QBestStates, Q, ScoredStatesAfterNMoves),
